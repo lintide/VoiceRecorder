@@ -21,7 +21,17 @@
 
 @property (weak, nonatomic) IBOutlet UIButton *recordOrStopButton;
 @property (weak, nonatomic) IBOutlet UIButton *playOrStopButton;
+@property (weak, nonatomic) IBOutlet UILabel *sizeLabel;
 
+@property (weak, nonatomic) IBOutlet UISegmentedControl *formatTypesSegmentedControl;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *sampleRatesSegmentedControl;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *qualitiesSegmentedControl;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *bitDepthsSegmentedControl;
+
+@property (strong, nonatomic) NSArray *formatTypes;
+@property (strong, nonatomic) NSArray *sampleRates;
+@property (strong, nonatomic) NSArray *qualities;
+@property (strong, nonatomic) NSArray *bitDepths;
 @end
 
 @implementation ViewController
@@ -32,7 +42,7 @@
     
     NSString *tempDir = NSTemporaryDirectory ();
     NSString *soundFilePath =
-    [tempDir stringByAppendingString: @"sound.aac"];
+    [tempDir stringByAppendingString: @"sound.pcm"];
     
     NSURL *newURL = [[NSURL alloc] initFileURLWithPath: soundFilePath];
     self.soundFileURL = newURL;
@@ -41,6 +51,10 @@
 //    audioSession.delegate = self; 这个代理已经废除了
     [audioSession setActive: YES error: nil];
     
+    self.formatTypes = @[@(kAudioFormatMPEG4AAC), @(kAudioFormatLinearPCM), @(kAudioFormatAppleLossless), @(kAudioFormatMPEG4AAC_LD), @(kAudioFormatMPEG4AAC_Spatial)];
+    self.sampleRates = @[@8000.0, @1600.0, @44100.0];
+    self.qualities = @[@(AVAudioQualityMin), @(AVAudioQualityLow), @(AVAudioQualityMedium), @(AVAudioQualityHigh), @(AVAudioQualityMax)];
+    self.bitDepths = @[@8, @16];
     
     recording = NO;
     playing = NO;
@@ -74,6 +88,7 @@
         CGFloat size = [[attr objectForKey:NSFileSize] unsignedLongLongValue] / 1024.0;
 //        NSLog(@"File attribute: %@, error: %@", attr, error);
         NSLog(@"duration: %f, size: %f KB，KB/s: %f", duration, size, size/duration);
+        self.sizeLabel.text = [NSString stringWithFormat:@"duration: %0.2f, size: %0.2f KB，KB/s: %0.2f", duration, size, size/duration];
         
         
     } else {
@@ -105,14 +120,18 @@
 //         AVEncoderAudioQualityKey,
 //         nil];
         
+        NSNumber *sampleRate = self.sampleRates[self.sampleRatesSegmentedControl.selectedSegmentIndex];
+        NSNumber *format = self.formatTypes[self.formatTypesSegmentedControl.selectedSegmentIndex];
+        NSNumber *quality = self.qualities[self.qualitiesSegmentedControl.selectedSegmentIndex];
+        NSNumber *bitDepth = self.bitDepths[self.bitDepthsSegmentedControl.selectedSegmentIndex];
+        
         NSDictionary *recordSettings =
         [[NSDictionary alloc] initWithObjectsAndKeys:
-         [NSNumber numberWithFloat: 16000.0], AVSampleRateKey,
-         [NSNumber numberWithInt: kAudioFormatMPEG4AAC], AVFormatIDKey,
+         sampleRate, AVSampleRateKey,
+         format, AVFormatIDKey,
          [NSNumber numberWithInt: 1], AVNumberOfChannelsKey,
-         [NSNumber numberWithInt: 8], AVLinearPCMBitDepthKey,
-         [NSNumber numberWithInt: AVAudioQualityMin],
-         AVEncoderAudioQualityKey,
+         bitDepth, AVLinearPCMBitDepthKey,
+         quality, AVEncoderAudioQualityKey,
          nil];
 
 
